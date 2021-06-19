@@ -16,21 +16,45 @@
  */
 template<typename T, const int static_cap = DEFAULT_STATIC_CAPACITY>
 class vl_vector {
-
- private: // fields
+ private:
+  /************* Private Fields **************/
   T _stack_data[static_cap];
   T *_heap_data;
   size_t _size;
   size_t _cap;
 
- public: // ctors & dtor
+ public:
+  /************* Constructors & Destructor **************/
   vl_vector () :
       _heap_data (nullptr),
       _size (0),
       _cap (static_cap)
   {}
 
- public: // Iterator & ConstIterator
+  vl_vector (const vl_vector &vlv) :
+      _heap_data (nullptr),
+      _size (vlv._size),
+      _cap (vlv._cap)
+  {
+    if (vlv._cap == static_cap)
+      {
+        std::copy (vlv._stack_data, vlv._stack_data + _size, _stack_data);
+      }
+    else
+      {
+        _heap_data = new T[_cap];
+        std::copy (vlv._heap_data, vlv._heap_data + _size, _heap_data);
+      }
+  }
+
+  template <class InputIterator>
+  vl_vector(InputIterator first, InputIterator last) : vl_vector() {
+    insert(_stack_data, first, last);
+  }
+
+
+
+  /************* Iterator & ConstIterator **************/
   using iterator = T *;
   using const_iterator = const T *;
 
@@ -64,7 +88,9 @@ class vl_vector {
     return end ();
   }
 
- private: // private methods
+ private:
+  /************* Private Methods **************/
+
   /**
    * The capacity function that indicates the maximum amount of element
    * a vector can contain, at any given moment.
@@ -78,7 +104,9 @@ class vl_vector {
            static_cap : (int) (GROWTH_FACTOR * (size + k));
   }
 
- public: // public methods
+ public:
+  /************* Public Methods **************/
+
   /**
    * @return a pointer to the variable that holds currently the data
    *         (on the stack or on the heap).
@@ -173,6 +201,48 @@ class vl_vector {
     ++_size;
   }
 
+  iterator insert (const_iterator position, const T &element) noexcept (false)
+  {
+    this->push_back (element);
+    for (iterator it = (this->end () - 1); it != position; it--);
+    position = &element;
+    return (iterator) position;
+  }
+
+  template<class InputIterator>
+  iterator insert (const_iterator position, InputIterator first,
+                   InputIterator end) noexcept (false)
+  {
+    size_t k = end - first; // number of new elements to add
+    if ((_cap == static_cap) && (_size + k > _cap))
+      {
+        _cap = cap_c (_size, k);
+        _heap_data = new T[_cap];
+        iterator it_1 = std::copy (_stack_data, (iterator) position, _heap_data);
+        iterator it_2 = std::copy (first, end, it_1);
+        std::copy ((iterator) position, _stack_data + _size, it_2);
+      }
+    else if ((_cap != static_cap) && (_size + k > _cap))
+      {
+        _cap = cap_c (_size, k);
+        T *temp = new T[_cap];
+        iterator it_1 = std::copy (_heap_data, (iterator) position, temp);
+        iterator it_2 = std::copy (first, end, it_1);
+        std::copy ((iterator) position, _heap_data + _size, it_2);
+        delete[] _heap_data;
+        _heap_data = temp;
+      }
+    else if (_size + k <= _cap)
+      {
+        std::move (position, (const_iterator) position + k, (const_iterator) position + k);
+        std::copy (first, end, position);
+      }
+    _size += k;
+    return (iterator) position;
+  }
+
+
+  /************* Operators Overloading **************/
   T &operator[] (const size_t &i) noexcept (true)
   {
     return data ()[i];
