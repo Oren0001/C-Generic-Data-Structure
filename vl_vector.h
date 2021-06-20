@@ -47,14 +47,34 @@ class vl_vector {
       }
   }
 
-  template <class InputIterator>
-  vl_vector(InputIterator first, InputIterator last) : vl_vector() {
-    insert(_stack_data, first, last);
+  template<class InputIterator>
+  vl_vector (InputIterator first, InputIterator last) : vl_vector ()
+  {
+    insert (_stack_data, first, last);
+  }
+
+  vl_vector (const size_t &count, const T &v) : vl_vector ()
+  {
+    if (count <= static_cap)
+      {
+        std::fill_n (_stack_data, count, v);
+      }
+    else
+      {
+        _cap = cap_c (_size, count);
+        _heap_data = new T[_cap];
+        std::fill_n (_heap_data, count, v);
+      }
+    _size += count;
+  }
+
+  ~vl_vector ()
+  {
+    delete[] _heap_data;
   }
 
 
-
-  /************* Iterator & ConstIterator **************/
+  /************* Iterator, Reverse Iterator and their Const **************/
   using iterator = T *;
   using const_iterator = const T *;
 
@@ -70,22 +90,55 @@ class vl_vector {
 
   const_iterator begin () const noexcept (true)
   {
-    return begin ();
+    return data ();
   }
 
   const_iterator end () const noexcept (true)
   {
-    return end ();
+    return data () + _size;
   }
 
   const_iterator cbegin () const noexcept (true)
   {
-    return begin ();
+    return data ();
   }
 
   const_iterator cend () const noexcept (true)
   {
-    return end ();
+    return data () + _size;
+  }
+
+  using reverse_iterator = std::reverse_iterator<iterator>;
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+  reverse_iterator rbegin () noexcept (true)
+  {
+    return reverse_iterator (data () + _size);
+  }
+
+  reverse_iterator rend () noexcept (true)
+  {
+    return reverse_iterator (data ());
+  }
+
+  const_reverse_iterator rbegin () const noexcept (true)
+  {
+    return const_reverse_iterator (data () + _size);
+  }
+
+  const_reverse_iterator rend () const noexcept (true)
+  {
+    return const_reverse_iterator (data ());
+  }
+
+  const_reverse_iterator crbegin () const noexcept (true)
+  {
+    return const_reverse_iterator (data () + _size);
+  }
+
+  const_reverse_iterator crend () const noexcept (true)
+  {
+    return const_reverse_iterator (data ());
   }
 
  private:
@@ -150,7 +203,7 @@ class vl_vector {
   /**
    * @return true if the vector is empty, othwerise false.
    */
-  bool empty () noexcept (true)
+  bool empty () const noexcept (true)
   {
     return (_size == 0) ? true : false;
   }
@@ -167,90 +220,192 @@ class vl_vector {
   }
 
   /**
-   * Adds a new element to the end of the vector.
-   * @param element An element to add.
+   * Inserts all the element from first to end (not included) before
+   * the given position.
+   * @tparam InputIterator An iterator over the range we want to insert.
+   * @param position A pointer to a const T that the range of elements will
+   *                 be inserted before it.
+   * @param first An iterator to the first element in the given range.
+   * @param end An iterator to the last element (not included) in the
+   *            given range.
+   * @return An iterator to the first element in the inserted range.
    */
-  void push_back (const T &element) noexcept (false)
-  {
-    if (_size + 1 <= static_cap)
-      {
-        _stack_data[_size] = element;
-      }
-    else if (_size == _cap)
-      {
-        if (_cap == static_cap)
-          {
-            _cap = cap_c (_size, 1);
-            _heap_data = new T[_cap];
-            std::copy (_stack_data, _stack_data + _size, _heap_data);
-          }
-        else
-          {
-            _cap = cap_c (_size, 1);
-            T *temp = new T[_cap];
-            std::copy (_heap_data, _heap_data + _size, temp);
-            delete[] _heap_data;
-            _heap_data = temp;
-          }
-        _heap_data[_size] = element;
-      }
-    else
-      {
-        _heap_data[_size] = element;
-      }
-    ++_size;
-  }
-
-  iterator insert (const_iterator position, const T &element) noexcept (false)
-  {
-    this->push_back (element);
-    for (iterator it = (this->end () - 1); it != position; it--);
-    position = &element;
-    return (iterator) position;
-  }
-
   template<class InputIterator>
   iterator insert (const_iterator position, InputIterator first,
-                   InputIterator end) noexcept (false)
+                   InputIterator last) noexcept (false)
   {
-    size_t k = end - first; // number of new elements to add
+    iterator pos = (iterator) position;
+    size_t k = last - first; // number of new elements to add
     if ((_cap == static_cap) && (_size + k > _cap))
       {
         _cap = cap_c (_size, k);
         _heap_data = new T[_cap];
-        iterator it_1 = std::copy (_stack_data, (iterator) position, _heap_data);
-        iterator it_2 = std::copy (first, end, it_1);
-        std::copy ((iterator) position, _stack_data + _size, it_2);
+        iterator it_1 = std::copy (_stack_data, pos, _heap_data);
+        iterator it_2 = std::copy (first, last, it_1);
+        std::copy (pos, _stack_data + _size, it_2);
+        pos = it_1;
       }
     else if ((_cap != static_cap) && (_size + k > _cap))
       {
         _cap = cap_c (_size, k);
         T *temp = new T[_cap];
-        iterator it_1 = std::copy (_heap_data, (iterator) position, temp);
-        iterator it_2 = std::copy (first, end, it_1);
-        std::copy ((iterator) position, _heap_data + _size, it_2);
+        iterator it_1 = std::copy (_heap_data, pos, temp);
+        iterator it_2 = std::copy (first, last, it_1);
+        std::copy (pos, _heap_data + _size, it_2);
         delete[] _heap_data;
         _heap_data = temp;
+        pos = it_1;
       }
     else if (_size + k <= _cap)
       {
-        std::move (position, (const_iterator) position + k, (const_iterator) position + k);
-        std::copy (first, end, position);
+        std::move (pos, end (), pos + k);
+        std::copy (first, last, pos);
       }
     _size += k;
-    return (iterator) position;
+    return pos;
   }
 
+  /**
+   * Inserts the given element before position.
+   * @param position A pointer to a const T that the element will be inserted
+   *                 before it.
+   * @param element An element to insert.
+   * @return An iterator to the new element that has been added.
+   */
+  iterator insert (const_iterator position, const T &element) noexcept (false)
+  {
+    return insert (position, &element, &element + 1);
+  }
+
+  /**
+ * Adds a new element to the end of the vector.
+ * @param element An element to add.
+ */
+  void push_back (const T &element) noexcept (false)
+  {
+    insert (end (), element);
+  }
+
+  /**
+   * Deletes all elements from first to last in this vector.
+   * @param first An iterator to the first element to delete.
+   * @param last An iterator to the last element to delete.
+   * @return An iterator to the element to the right of the deleted range.
+   */
+  iterator erase (const_iterator first, const_iterator last) noexcept (false)
+  {
+    iterator r_value = (iterator) last;
+    size_t k = last - first; // number of elements to delete
+    if ((_cap != static_cap) && (_size - k <= static_cap))
+      {
+        iterator it_1 = std::copy (_heap_data, (iterator) first, _stack_data);
+        std::copy ((iterator) last, end (), it_1);
+        delete[] _heap_data;
+        _heap_data = nullptr;
+        _cap = static_cap;
+        r_value = it_1;
+      }
+    else
+      {
+        std::move ((iterator) last, end (), (iterator) first);
+      }
+    _size -= k;
+    return r_value;
+  }
+
+  /**
+   * Deletes the element that 'it' points at from the vector.
+   * @param it A pointer to const T that will be deleted.
+   * @return An iterator to the element to the right of the deleted element.
+   */
+  iterator erase (const_iterator it) noexcept (false)
+  {
+    return erase (it, it + 1);
+  }
+
+  /**
+   * Deletes the last element from the vector.
+   */
+  void pop_back ()
+  {
+    if (_size == 0)
+      {
+        return;
+      }
+    erase (end () - 1);
+  }
+
+  /**
+   * Deletes all the elements in the vector.
+   */
+  void clear ()
+  {
+    _size = 0;
+    if (_cap == static_cap)
+      {
+        return;
+      }
+    else
+      {
+        delete[] _heap_data;
+        _heap_data = nullptr;
+        _cap = static_cap;
+      }
+  }
 
   /************* Operators Overloading **************/
+
+  /**
+   * @param i An index which belongs to [0,size of vector).
+   * @return A reference to the element at the index.
+   */
   T &operator[] (const size_t &i) noexcept (true)
   {
     return data ()[i];
   }
 
+  /**
+   * @param i An index which belongs to [0,size of vector).
+   * @return The element at the index.
+   */
   T operator[] (const size_t &i) const noexcept (true)
   {
     return data ()[i];
+  }
+
+  vl_vector &operator= (const vl_vector &rhs)
+  {
+    if (this != &rhs)
+      {
+        this->_size = rhs._size;
+        this->_cap = rhs._cap;
+        delete[] this->_heap_data;
+
+        insert (this->begin (), rhs.begin (), rhs.end ());
+
+//        if (_cap == static_cap)
+//          {
+//            std::copy (rhs.begin (), rhs.end (), this->begin ());
+//          }
+//        else
+//          {
+//            this->_heap_data = new T[rhs._cap];
+//            std::copy (rhs.begin(), rhs.end(), )
+//          }
+      }
+    return *this;
+  }
+
+  bool operator== (const vl_vector &rhs) const
+  {
+    return (this->_size == rhs._size) &&
+           std::equal (this->cbegin (), this->cend (), rhs.cbegin ());
+  }
+
+  bool operator!= (const vl_vector &rhs) const
+  {
+    return (this->_size != rhs._size) ||
+           !std::equal (this->cbegin (), this->cend (), rhs.cbegin ());
   }
 
 };
