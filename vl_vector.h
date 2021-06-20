@@ -18,19 +18,27 @@ template<typename T, const int static_cap = DEFAULT_STATIC_CAPACITY>
 class vl_vector {
  private:
   /************* Private Fields **************/
-  T _stack_data[static_cap];
-  T *_heap_data;
-  size_t _size;
-  size_t _cap;
+  T _stack_data[static_cap]; // holds the data in the stack memory.
+  T *_heap_data; // holds the data in the heap memory.
+  size_t _size; // size of this vector.
+  size_t _cap; // capacity of this vector.
 
  public:
   /************* Constructors & Destructor **************/
+
+  /**
+   * Default constructor which initializes empty vl_vector.
+   */
   vl_vector () :
       _heap_data (nullptr),
       _size (0),
       _cap (static_cap)
   {}
 
+  /**
+   * Copy Constructor.
+   * @param vlv A vl_vector object to copy from.
+   */
   vl_vector (const vl_vector &vlv) :
       _heap_data (nullptr),
       _size (vlv._size),
@@ -47,12 +55,23 @@ class vl_vector {
       }
   }
 
+  /**
+   *
+   * @tparam InputIterator
+   * @param first
+   * @param last
+   */
   template<class InputIterator>
   vl_vector (InputIterator first, InputIterator last) : vl_vector ()
   {
     insert (_stack_data, first, last);
   }
 
+  /**
+   *
+   * @param count
+   * @param v
+   */
   vl_vector (const size_t &count, const T &v) : vl_vector ()
   {
     if (count <= static_cap)
@@ -68,6 +87,9 @@ class vl_vector {
     _size += count;
   }
 
+  /**
+   *
+   */
   ~vl_vector ()
   {
     delete[] _heap_data;
@@ -295,7 +317,7 @@ class vl_vector {
    */
   iterator erase (const_iterator first, const_iterator last) noexcept (false)
   {
-    iterator r_value = (iterator) last;
+    iterator r_value = (iterator) first;
     size_t k = last - first; // number of elements to delete
     if ((_cap != static_cap) && (_size - k <= static_cap))
       {
@@ -308,7 +330,7 @@ class vl_vector {
       }
     else
       {
-        std::move ((iterator) last, end (), (iterator) first);
+        std::move ((iterator) last, end(), (iterator) first);
       }
     _size -= k;
     return r_value;
