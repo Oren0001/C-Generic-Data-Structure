@@ -75,6 +75,7 @@ class vl_vector {
 
 
   /************* Iterator, Reverse Iterator and their Const **************/
+  using value_type = T;
   using iterator = T *;
   using const_iterator = const T *;
 
@@ -380,21 +381,19 @@ class vl_vector {
         this->_size = rhs._size;
         this->_cap = rhs._cap;
         delete[] this->_heap_data;
-
-        insert (this->begin (), rhs.begin (), rhs.end ());
-
-//        if (_cap == static_cap)
-//          {
-//            std::copy (rhs.begin (), rhs.end (), this->begin ());
-//          }
-//        else
-//          {
-//            this->_heap_data = new T[rhs._cap];
-//            std::copy (rhs.begin(), rhs.end(), )
-//          }
+        if (_cap == static_cap)
+          {
+            std::copy (rhs.begin (), rhs.end (), _stack_data);
+          }
+        else
+          {
+            this->_heap_data = new T[rhs._cap];
+            std::copy (rhs.begin (), rhs.end (), _heap_data);
+          }
       }
     return *this;
   }
+
 
   bool operator== (const vl_vector &rhs) const
   {
