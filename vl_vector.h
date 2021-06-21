@@ -2,6 +2,7 @@
 #define _VL_VECTOR_H_
 
 #include <algorithm>
+#include <stdexcept>
 
 #define DEFAULT_STATIC_CAPACITY 16
 #define GROWTH_FACTOR 1.5
