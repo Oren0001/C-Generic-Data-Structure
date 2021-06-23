@@ -15,11 +15,11 @@
  * @tparam static_cap A value that determines how much elements can be on
  *                    the stack. Beyond this value, they will be on the heap.
  */
-template<typename T, const int StaticCap = DEFAULT_STATIC_CAPACITY>
+template<typename T, const int StaticCapacity = DEFAULT_STATIC_CAPACITY>
 class vl_vector {
- private:
-  /************* Private Fields **************/
-  T _stack_data[StaticCap]; // holds the data in the stack memory.
+ protected:
+  /************* Protected Fields **************/
+  T _stack_data[StaticCapacity]; // holds the data in the stack memory.
   T *_heap_data; // holds the data in the heap memory.
   size_t _size; // size of this vector.
   size_t _cap; // capacity of this vector.
@@ -33,7 +33,7 @@ class vl_vector {
   vl_vector () :
       _heap_data (nullptr),
       _size (0),
-      _cap (StaticCap)
+      _cap (StaticCapacity)
   {}
 
   /**
@@ -45,26 +45,26 @@ class vl_vector {
       _size (vlv._size),
       _cap (vlv._cap)
   {
-    if (vlv._cap == StaticCap)
+    if (vlv._cap == StaticCapacity)
       {
-        std::copy (vlv._stack_data, vlv._stack_data + _size, _stack_data);
+        std::copy (vlv._stack_data, vlv._stack_data + size (), _stack_data);
       }
     else
       {
         _heap_data = new T[_cap];
-        std::copy (vlv._heap_data, vlv._heap_data + _size, _heap_data);
+        std::copy (vlv._heap_data, vlv._heap_data + size (), _heap_data);
       }
   }
 
   /**
    * Sequence based constructor. Gets a range of elements - [first, last),
    * and stores them in the vector.
-   * @tparam InputIterator A type of iterator.
+   * @tparam ForwardIterator the type of iterator.
    * @param first An iterator that represents the first element.
    * @param last An iterator that represents the last element.
    */
-  template<class InputIterator>
-  vl_vector (InputIterator first, InputIterator last) : vl_vector ()
+  template<class ForwardIterator>
+  vl_vector (ForwardIterator first, ForwardIterator last) : vl_vector ()
   {
     insert (_stack_data, first, last);
   }
@@ -77,7 +77,7 @@ class vl_vector {
    */
   vl_vector (const size_t &count, const T &v) : vl_vector ()
   {
-    if (count <= StaticCap)
+    if (count <= StaticCapacity)
       {
         std::fill_n (_stack_data, count, v);
       }
@@ -93,11 +93,10 @@ class vl_vector {
   /**
    * Destructor.
    */
-  ~vl_vector ()
+  virtual ~vl_vector ()
   {
     delete[] _heap_data;
   }
-
 
   /************* Iterator, Reverse Iterator and their Const **************/
   using value_type = T;
@@ -117,7 +116,7 @@ class vl_vector {
    */
   iterator end () noexcept (true)
   {
-    return data () + _size;
+    return data () + size ();
   }
 
   /**
@@ -133,7 +132,7 @@ class vl_vector {
    */
   const_iterator end () const noexcept (true)
   {
-    return data () + _size;
+    return data () + size ();
   }
 
   /**
@@ -149,7 +148,7 @@ class vl_vector {
    */
   const_iterator cend () const noexcept (true)
   {
-    return data () + _size;
+    return data () + size ();
   }
 
   using reverse_iterator = std::reverse_iterator<iterator>;
@@ -160,7 +159,7 @@ class vl_vector {
    */
   reverse_iterator rbegin () noexcept (true)
   {
-    return reverse_iterator (data () + _size);
+    return reverse_iterator (data () + size ());
   }
 
   /**
@@ -176,7 +175,7 @@ class vl_vector {
    */
   const_reverse_iterator rbegin () const noexcept (true)
   {
-    return const_reverse_iterator (data () + _size);
+    return const_reverse_iterator (data () + size ());
   }
 
   /**
@@ -192,7 +191,7 @@ class vl_vector {
    */
   const_reverse_iterator crbegin () const noexcept (true)
   {
-    return const_reverse_iterator (data () + _size);
+    return const_reverse_iterator (data () + size ());
   }
 
   /**
@@ -204,7 +203,7 @@ class vl_vector {
   }
 
  private:
-  /************* Private Methods **************/
+  /************* Protected Methods **************/
 
   /**
    * The capacity function that indicates the maximum amount of element
@@ -215,8 +214,8 @@ class vl_vector {
    */
   static size_t cap_c (const size_t &size, const size_t &k) noexcept (true)
   {
-    return (size + k <= StaticCap) ?
-           StaticCap : (int) (GROWTH_FACTOR * (size + k));
+    return (size + k <= StaticCapacity) ?
+           StaticCapacity : (int) (GROWTH_FACTOR * (size + k));
   }
 
  public:
@@ -228,7 +227,7 @@ class vl_vector {
    */
   T *data () noexcept (true)
   {
-    return (_cap == StaticCap) ? _stack_data : _heap_data;
+    return (_cap == StaticCapacity) ? _stack_data : _heap_data;
   }
 
   /**
@@ -237,7 +236,7 @@ class vl_vector {
    */
   const T *data () const noexcept (true)
   {
-    return (_cap == StaticCap) ? _stack_data : _heap_data;
+    return (_cap == StaticCapacity) ? _stack_data : _heap_data;
   }
 
   /**
@@ -253,7 +252,7 @@ class vl_vector {
   /**
    * @return the current amount of elements in the vector.
    */
-  size_t size () const noexcept (true)
+  virtual size_t size () const noexcept (true)
   {
     return _size;
   }
@@ -267,11 +266,24 @@ class vl_vector {
   }
 
   /**
-   * @return true if the vector is empty, othwerise false.
+   * @return true if the vector is empty, otherwise false.
    */
   bool empty () const noexcept (true)
   {
-    return _size == 0;
+    return size () == 0;
+  }
+
+  /**
+   * @param i An index.
+   * @return A reference to the element at index i in the vector.
+   */
+  T &at (const size_t &i) noexcept (false)
+  {
+    if (i >= size ())
+      {
+        throw std::out_of_range{"Invalid index"};
+      }
+    return data ()[i];
   }
 
   /**
@@ -280,7 +292,7 @@ class vl_vector {
    */
   T at (const size_t &i) const noexcept (false)
   {
-    if (i >= _size)
+    if (i >= size ())
       {
         throw std::out_of_range{"Invalid index"};
       }
@@ -290,7 +302,7 @@ class vl_vector {
   /**
    * Inserts all the element from first to end (not included) before
    * the given position.
-   * @tparam InputIterator An iterator over the range we want to insert.
+   * @tparam ForwardIterator An iterator over the range we want to insert.
    * @param position A pointer to a const T that the range of elements will
    *                 be inserted before it.
    * @param first An iterator to the first element in the given range.
@@ -298,13 +310,13 @@ class vl_vector {
    *            given range.
    * @return An iterator to the first element in the inserted range.
    */
-  template<class InputIterator>
-  iterator insert (const_iterator position, InputIterator first,
-                   InputIterator last) noexcept (false)
+  template<class ForwardIterator>
+  iterator insert (const_iterator position, ForwardIterator first,
+                   ForwardIterator last) noexcept (false)
   {
     iterator pos = (iterator) position;
     size_t k = last - first; // number of new elements to add
-    if ((_cap == StaticCap) && (_size + k > _cap))
+    if ((_cap == StaticCapacity) && (_size + k > _cap))
       {
         _cap = cap_c (_size, k);
         _heap_data = new T[_cap];
@@ -313,7 +325,7 @@ class vl_vector {
         std::copy (pos, _stack_data + _size, it_2);
         pos = it_1;
       }
-    else if ((_cap != StaticCap) && (_size + k > _cap))
+    else if ((_cap != StaticCapacity) && (_size + k > _cap))
       {
         _cap = cap_c (_size, k);
         T *temp = new T[_cap];
@@ -364,13 +376,13 @@ class vl_vector {
   {
     iterator r_value = (iterator) first;
     size_t k = last - first; // number of elements to delete
-    if ((_cap != StaticCap) && (_size - k <= StaticCap))
+    if ((_cap != StaticCapacity) && (_size - k <= StaticCapacity))
       {
         iterator it_1 = std::copy (_heap_data, (iterator) first, _stack_data);
         std::copy ((iterator) last, end (), it_1);
         delete[] _heap_data;
         _heap_data = nullptr;
-        _cap = StaticCap;
+        _cap = StaticCapacity;
         r_value = it_1;
       }
     else
@@ -396,7 +408,7 @@ class vl_vector {
    */
   void pop_back () noexcept (false)
   {
-    if (_size == 0)
+    if (size () == 0)
       {
         return;
       }
@@ -404,12 +416,12 @@ class vl_vector {
   }
 
   /**
-   * Deletes all the elements in the vector.
+   * Deletes all elements from the vector.
    */
-  void clear () noexcept (false)
+  virtual void clear () noexcept (false)
   {
     _size = 0;
-    if (_cap == StaticCap)
+    if (_cap == StaticCapacity)
       {
         return;
       }
@@ -417,7 +429,7 @@ class vl_vector {
       {
         delete[] _heap_data;
         _heap_data = nullptr;
-        _cap = StaticCap;
+        _cap = StaticCapacity;
       }
   }
 
@@ -453,7 +465,7 @@ class vl_vector {
         this->_size = rhs._size;
         this->_cap = rhs._cap;
         delete[] this->_heap_data;
-        if (_cap == StaticCap)
+        if (_cap == StaticCapacity)
           {
             std::copy (rhs.begin (), rhs.end (), _stack_data);
           }
@@ -474,7 +486,7 @@ class vl_vector {
    */
   bool operator== (const vl_vector &rhs) const noexcept (false)
   {
-    return (this->_size == rhs._size) &&
+    return (this->size () == rhs.size ()) &&
            std::equal (this->cbegin (), this->cend (), rhs.cbegin ());
   }
 
@@ -486,7 +498,7 @@ class vl_vector {
    */
   bool operator!= (const vl_vector &rhs) const noexcept (false)
   {
-    return (this->_size != rhs._size) ||
+    return (this->size () != rhs.size ()) ||
            !std::equal (this->cbegin (), this->cend (), rhs.cbegin ());
   }
 
