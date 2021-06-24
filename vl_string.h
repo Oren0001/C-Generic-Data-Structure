@@ -75,7 +75,7 @@ class vl_string : public vl_vector<char, StaticCapacity> {
    */
   vl_string &operator+= (const char rhs) noexcept (false)
   {
-    this->insert (this->end (), rhs);
+    this->insert (this->data() + this->size(), rhs);
     return *this;
   }
 
@@ -86,7 +86,7 @@ class vl_string : public vl_vector<char, StaticCapacity> {
    */
   vl_string &operator+= (const char *rhs) noexcept (false)
   {
-    this->insert (this->end (), rhs, rhs + strlen (rhs));
+    this->insert (this->data() + this->size(), rhs, rhs + strlen (rhs));
     return *this;
   }
 
@@ -108,7 +108,7 @@ class vl_string : public vl_vector<char, StaticCapacity> {
   vl_string operator+ (const char rhs) const noexcept (false)
   {
     vl_string res (*this);
-    res.insert (res.end (), rhs);
+    res.insert (res.data() + res.size(), rhs);
     return res;
   }
 
@@ -120,7 +120,7 @@ class vl_string : public vl_vector<char, StaticCapacity> {
   vl_string operator+ (const char *rhs) const noexcept (false)
   {
     vl_string res (*this);
-    res.insert (res.end (), rhs, rhs + strlen (rhs));
+    res.insert (res.data() + res.size(), rhs, rhs + strlen (rhs));
     return res;
   }
 
@@ -132,7 +132,7 @@ class vl_string : public vl_vector<char, StaticCapacity> {
   vl_string operator+ (const vl_string &rhs) const noexcept (false)
   {
     vl_string res (*this);
-    res.insert (res.end (), rhs.cbegin (), rhs.cend);
+    res.insert (res.data() + res.size(), rhs.cbegin (), rhs.cend);
     return res;
   }
 

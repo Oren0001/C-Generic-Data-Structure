@@ -116,7 +116,7 @@ class vl_vector {
    */
   iterator end () noexcept (true)
   {
-    return data () + size ();
+    return data () + _size;
   }
 
   /**
@@ -132,7 +132,7 @@ class vl_vector {
    */
   const_iterator end () const noexcept (true)
   {
-    return data () + size ();
+    return data () + _size;
   }
 
   /**
@@ -148,7 +148,7 @@ class vl_vector {
    */
   const_iterator cend () const noexcept (true)
   {
-    return data () + size ();
+    return data () + _size;
   }
 
   using reverse_iterator = std::reverse_iterator<iterator>;
@@ -159,7 +159,7 @@ class vl_vector {
    */
   reverse_iterator rbegin () noexcept (true)
   {
-    return reverse_iterator (data () + size ());
+    return reverse_iterator (data () + _size);
   }
 
   /**
@@ -175,7 +175,7 @@ class vl_vector {
    */
   const_reverse_iterator rbegin () const noexcept (true)
   {
-    return const_reverse_iterator (data () + size ());
+    return const_reverse_iterator (data () + _size);
   }
 
   /**
@@ -191,7 +191,7 @@ class vl_vector {
    */
   const_reverse_iterator crbegin () const noexcept (true)
   {
-    return const_reverse_iterator (data () + size ());
+    return const_reverse_iterator (data () + _size);
   }
 
   /**
@@ -279,7 +279,7 @@ class vl_vector {
    */
   T &at (const size_t &i) noexcept (false)
   {
-    if (i >= size ())
+    if (i >= _size)
       {
         throw std::out_of_range{"Invalid index"};
       }
@@ -292,7 +292,7 @@ class vl_vector {
    */
   T at (const size_t &i) const noexcept (false)
   {
-    if (i >= size ())
+    if (i >= _size)
       {
         throw std::out_of_range{"Invalid index"};
       }
@@ -363,7 +363,7 @@ class vl_vector {
  */
   void push_back (const T &element) noexcept (false)
   {
-    insert (end (), element);
+    insert (data () + size(), element);
   }
 
   /**
@@ -412,7 +412,7 @@ class vl_vector {
       {
         return;
       }
-    erase (end () - 1);
+    erase (data () + size() - 1);
   }
 
   /**
@@ -486,7 +486,7 @@ class vl_vector {
    */
   bool operator== (const vl_vector &rhs) const noexcept (false)
   {
-    return (this->size () == rhs.size ()) &&
+    return (this->_size == rhs._size) &&
            std::equal (this->cbegin (), this->cend (), rhs.cbegin ());
   }
 
@@ -498,7 +498,7 @@ class vl_vector {
    */
   bool operator!= (const vl_vector &rhs) const noexcept (false)
   {
-    return (this->size () != rhs.size ()) ||
+    return (this->_size != rhs._size) ||
            !std::equal (this->cbegin (), this->cend (), rhs.cbegin ());
   }
 
